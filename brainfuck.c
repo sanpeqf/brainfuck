@@ -41,7 +41,7 @@ brainfuck(const char *syntax, const char **endp)
         getreg:
             reg = bfdev_array_data(&array, index);
             if (bfdev_unlikely(!reg)) {
-                retval = -BFDEV_EOVERFLOW;
+                retval = -BFDEV_ENODATA;
                 goto finish;
             }
             break;
