@@ -4,7 +4,7 @@
 #
 
 brainfuck: brainfuck.c
-	gcc -O2 -Wall -Werror -o ./brainfuck ./brainfuck.c -lbfdev
+	gcc -O2 -Wall -Werror -o ./brainfuck ./brainfuck.c ./main.c -lbfdev
 
 clean:
 	rm -rf ./brainfuck

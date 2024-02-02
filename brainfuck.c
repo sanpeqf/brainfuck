@@ -6,15 +6,17 @@
 #include <stdio.h>
 #include <bfdev.h>
 
-static inline int
-execute(const char *walk)
+int
+brainfuck(const char *syntax, const char **endp)
 {
     BFDEV_DEFINE_ARRAY(array, NULL, BFDEV_BYTES_PER_CHAR);
     BFDEV_DEFINE_ARRAY(stack, NULL, BFDEV_BYTES_PER_UINTPTR);
     unsigned int deepth, index;
     const char **btrackp;
     char *reg, ch;
+    int retval;
 
+    retval = 0;
     index = -1;
     ch = '>';
 
@@ -24,8 +26,10 @@ execute(const char *walk)
                 goto getreg;
 
             reg = bfdev_array_push(&array, 1);
-            if (bfdev_unlikely(!reg))
-                return -BFDEV_ENOMEM;
+            if (bfdev_unlikely(!reg)) {
+                retval = -BFDEV_ENOMEM;
+                goto finish;
+            }
 
             *reg = 0;
             break;
@@ -36,8 +40,10 @@ execute(const char *walk)
 
         getreg:
             reg = bfdev_array_data(&array, index);
-            if (bfdev_unlikely(!reg))
-                return -BFDEV_EOVERFLOW;
+            if (bfdev_unlikely(!reg)) {
+                retval = -BFDEV_EOVERFLOW;
+                goto finish;
+            }
             break;
 
         case '+':
@@ -58,62 +64,53 @@ execute(const char *walk)
 
         case '[':
             btrackp = bfdev_array_push(&stack, 1);
-            if (!btrackp)
-                return -BFDEV_ENOMEM;
+            if (!btrackp) {
+                retval = -BFDEV_ENOMEM;
+                goto finish;
+            }
 
-            *btrackp = walk;
+            *btrackp = syntax;
             if (*reg)
                 break;
 
-            for (deepth = 1; deepth; ++walk) {
-                if (!*walk)
-                    return -BFDEV_EINVAL;
+            for (deepth = 1; deepth; ++syntax) {
+                if (!*syntax) {
+                    retval = -BFDEV_EINVAL;
+                    goto finish;
+                }
 
-                if (*walk == '[')
+                if (*syntax == '[')
                     deepth++;
-                else if (*walk == ']')
+                else if (*syntax == ']')
                     deepth--;
 
-                walk++;
+                syntax++;
             }
             break;
 
         case ']':
+            btrackp = bfdev_array_peek(&stack, 1);
+            if (bfdev_unlikely(!btrackp)) {
+                retval = -BFDEV_ENOKEY;
+                goto finish;
+            }
+
             if (!*reg) {
                 bfdev_array_pop(&stack, 1);
                 break;
             }
 
-            btrackp = bfdev_array_peek(&stack, 1);
-            if (bfdev_unlikely(!btrackp))
-                return -BFDEV_ENOKEY;
-
-            walk = *btrackp;
+            syntax = *btrackp;
             break;
 
         default:
             break;
-    } while ((ch = *walk++));
+    } while ((ch = *syntax++));
 
+finish:
     bfdev_array_release(&array);
     bfdev_array_release(&stack);
 
-    return 0;
-}
-
-int main(int argc, const char *argv[])
-{
-    const char *errinfo;
-    int index, retval;
-
-    for (index = 1; index < argc; ++index) {
-        retval = execute(argv[index]);
-        if (bfdev_unlikely(retval)) {
-            bfdev_errname(retval, &errinfo);
-            printf("execute error: %s\n", errinfo);
-            return retval;
-        }
-    }
-
-    return 0;
+    *endp = syntax - 1;
+    return retval;
 }
