@@ -10,17 +10,23 @@ static inline int
 execute(const char *walk)
 {
     BFDEV_DEFINE_ARRAY(array, NULL, BFDEV_BYTES_PER_CHAR);
-    unsigned int deepth, index = -1;
-    const char *btrack = NULL;
-    char *reg, ch = '>';
+    BFDEV_DEFINE_ARRAY(stack, NULL, BFDEV_BYTES_PER_UINTPTR);
+    unsigned int deepth, index;
+    const char **btrackp;
+    char *reg, ch;
+
+    index = -1;
+    ch = '>';
 
     do switch (ch) {
         case '>':
             if (++index < bfdev_array_index(&array))
                 goto getreg;
+
             reg = bfdev_array_push(&array, 1);
             if (bfdev_unlikely(!reg))
                 return -BFDEV_ENOMEM;
+
             *reg = 0;
             break;
 
@@ -51,32 +57,46 @@ execute(const char *walk)
             break;
 
         case '[':
-            btrack = walk;
+            btrackp = bfdev_array_push(&stack, 1);
+            if (!btrackp)
+                return -BFDEV_ENOMEM;
+
+            *btrackp = walk;
             if (*reg)
                 break;
-            deepth = 1;
-            while (deepth) {
+
+            for (deepth = 1; deepth; ++walk) {
                 if (!*walk)
                     return -BFDEV_EINVAL;
+
                 if (*walk == '[')
                     deepth++;
                 else if (*walk == ']')
                     deepth--;
+
                 walk++;
             }
             break;
 
         case ']':
-            if (!*reg)
+            if (!*reg) {
+                bfdev_array_pop(&stack, 1);
                 break;
-            walk = btrack;
-            if (bfdev_unlikely(!walk))
+            }
+
+            btrackp = bfdev_array_peek(&stack, 1);
+            if (bfdev_unlikely(!btrackp))
                 return -BFDEV_ENOKEY;
+
+            walk = *btrackp;
             break;
 
         default:
             break;
     } while ((ch = *walk++));
+
+    bfdev_array_release(&array);
+    bfdev_array_release(&stack);
 
     return 0;
 }
