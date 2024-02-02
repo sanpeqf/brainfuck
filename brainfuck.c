@@ -83,8 +83,6 @@ brainfuck(const char *syntax, const char **endp)
                     deepth++;
                 else if (*syntax == ']')
                     deepth--;
-
-                syntax++;
             }
             break;
 
