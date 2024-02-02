@@ -12,6 +12,39 @@
 extern int
 brainfuck(const char *syntax, const char **endp);
 
+static inline void
+show_error(const char *curr, const char *start)
+{
+    unsigned int line, column, count;
+    const char *walk;
+    int size;
+
+    column = 1;
+    line = 1;
+
+    for (walk = start; walk <= curr; ++walk) {
+        if (*walk != '\n') {
+            column++;
+            continue;
+        }
+
+        start = walk;
+        column = 0;
+        line++;
+    }
+
+    walk = strchr(walk, '\n');
+    size = walk ? walk - ++start: -1;
+
+    bfdev_log_err("Line Number %u, Column %u\n", line, column);
+    printf("\t| %.*s\n", size, start);
+
+    printf("\t| ");
+    for (count = 1; count < column; ++count)
+        printf("-");
+    printf("^\n");
+}
+
 int main(int argc, const char *argv[])
 {
     const char *errinfo, *end;
@@ -24,6 +57,7 @@ int main(int argc, const char *argv[])
 
         bfdev_errname(retval, &errinfo);
         bfdev_log_err("execute error: %s\n", errinfo);
+        show_error(end, argv[index]);
         return retval;
     }
 
