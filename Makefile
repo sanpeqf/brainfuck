@@ -3,8 +3,8 @@
 # Copyright(c) 2023 John Sanpe <sanpeqf@gmail.com>
 #
 
-brainfuck: brainfuck.c
-	gcc -O2 -Wall -Werror -o ./brainfuck ./brainfuck.c ./main.c -lbfdev
+brainfuck: brainfuck.c main.c
+	gcc -O2 -Wall -Werror -o $@ $^ -lbfdev
 
 clean:
 	rm -rf ./brainfuck
