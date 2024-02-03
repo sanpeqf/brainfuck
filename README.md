@@ -8,6 +8,7 @@
 ## Usage
 
 ```shell
-$ ./brainfuck "$(cat ./testsuite/helloworld.bf)"
+$ make
+$ ./brainfuck ./testsuite/helloworld.bf
 Hello World!
 ```

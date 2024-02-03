@@ -7,6 +7,11 @@
 #define bfdev_log_fmt(fmt) MODULE_NAME ": " fmt
 
 #include <stdio.h>
+#include <unistd.h>
+#include <err.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 #include <bfdev.h>
 
 extern int
@@ -48,16 +53,32 @@ show_error(const char *curr, const char *start)
 int main(int argc, const char *argv[])
 {
     const char *errinfo, *end;
-    int index, retval;
+    int index, retval, fd;
+    struct stat stat;
+    void *block;
 
     for (index = 1; index < argc; ++index) {
-        retval = brainfuck(argv[index], &end);
+        if ((fd = open(argv[index], O_RDONLY)) < 0)
+            err(1, argv[index]);
+
+        if ((retval = fstat(fd, &stat)) < 0)
+            err(retval, argv[index]);
+
+        block = mmap(NULL, stat.st_size, PROT_READ, MAP_SHARED, fd, 0);
+        if (block == MAP_FAILED)
+            err(1, argv[index]);
+
+        retval = brainfuck(block, &end);
         if (bfdev_likely(!retval))
             continue;
 
         bfdev_errname(retval, &errinfo);
         bfdev_log_err("execute error: %s\n", errinfo);
-        show_error(end, argv[index]);
+        show_error(end, block);
+
+        munmap(block, stat.st_size);
+        close(fd);
+
         return retval;
     }
 
