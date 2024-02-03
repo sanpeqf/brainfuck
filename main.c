@@ -22,7 +22,7 @@ show_error(const char *curr, const char *start)
 {
     unsigned int line, column, count;
     const char *walk;
-    int size;
+    int size, width;
 
     column = 1;
     line = 1;
@@ -42,9 +42,12 @@ show_error(const char *curr, const char *start)
     size = walk ? walk - ++start: -1;
 
     bfdev_log_err("Line Number %u, Column %u\n", line, column);
-    printf("\t| %.*s\n", size, start);
+    width = printf("  %u ", line);
+    printf("| %.*s\n", size, start);
 
-    printf("\t| ");
+    while (width--)
+        printf(" ");
+    printf("| ");
     for (count = 1; count < column; ++count)
         printf("-");
     printf("^\n");
