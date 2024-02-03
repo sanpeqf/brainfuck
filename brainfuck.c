@@ -63,17 +63,19 @@ brainfuck(const char *syntax, const char **endp)
             break;
 
         case '[':
-            btrackp = bfdev_array_push(&stack, 1);
-            if (!btrackp) {
-                retval = -BFDEV_ENOMEM;
-                goto finish;
+            if (*reg) {
+                btrackp = bfdev_array_push(&stack, 1);
+                if (!btrackp) {
+                    retval = -BFDEV_ENOMEM;
+                    goto finish;
+                }
+
+                *btrackp = syntax;
+                break;
             }
 
-            *btrackp = syntax;
-            if (*reg)
-                break;
-
-            for (deepth = 1; deepth; ++syntax) {
+            deepth = 1;
+            while (deepth) {
                 if (!*syntax) {
                     retval = -BFDEV_EINVAL;
                     goto finish;
@@ -83,6 +85,8 @@ brainfuck(const char *syntax, const char **endp)
                     deepth++;
                 else if (*syntax == ']')
                     deepth--;
+
+                syntax++;
             }
             break;
 
