@@ -6,6 +6,9 @@ on:
   push:
   pull_request:
 
+env:
+  BUILD_TYPE: Release
+
 jobs:
   build:
     strategy:
@@ -16,31 +19,39 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout
+      - name: checkout
         uses: actions/checkout@v3
       - name: Setup variables
         run: |
           echo RELEASE=$(date +%Y\/%m\/%d) >> $GITHUB_ENV
 
-      - name: Install dependencies
+      - name: install dependencies
         run: |
           sudo apt update
           sudo apt install make cmake gcc
 
-      - name: Prepare bfdev environment
+      - name: install bfdev
         run: |
           git clone https://github.com/openbfdev/bfdev.git
           cd bfdev
-          cmake -Bbuild -DCMAKE_INSTALL_PREFIX=${HOME}/.local -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --config Release -j$(nproc) -- install
+          cmake -Bbuild -DCMAKE_INSTALL_PREFIX=${HOME}/.local \
+            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build build --config ${{env.BUILD_TYPE}} \
+            -j$(nproc) -- install
 
-      - name: Build project
+      - name: configure cmake
         run: |
-          export C_INCLUDE_PATH=$C_INCLUDE_PATH:$HOME/.local/include
-          export LIBRARY_PATH=$LIBRARY_PATH:$HOME/.local/lib:$HOME/.local/lib64
-          make
+          cmake -Bbuild -DCMAKE_INSTALL_PREFIX=${PWD}/install \
+            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
-      - name: Create release
+      - name: build project
+        run: |
+          export C_INCLUDE_PATH=${C_INCLUDE_PATH}:${HOME}/.local/include
+          export LIBRARY_PATH=${LIBRARY_PATH}:${HOME}/.local/lib:${HOME}/.local/lib64
+          cmake --build build --config ${{env.BUILD_TYPE}} \
+            -j$(nproc) -- install
+
+      - name: create release
         uses: softprops/action-gh-release@v1
         if: github.ref == 'refs/heads/master'
         env:
@@ -51,9 +62,9 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ${{github.workspace}}/brainfuck
+            ${{github.workspace}}/install/bin/brainfuck
 
-      - name: Delete old releases
+      - name: delete old releases
         uses: dev-drprasad/delete-older-releases@v0.2.0
         if: github.ref == 'refs/heads/master'
         env:

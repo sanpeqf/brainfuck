@@ -9,7 +9,8 @@
 ## Usage
 
 ```shell
-$ make
-$ ./brainfuck ./testsuite/helloworld.bf
+$ cmake -Bbuild -DCMAKE_BUILD_TYPE=Release
+$ cmake --build build --config Release
+$ ./build/brainfuck ./testsuite/helloworld.bf
 Hello World!
 ```

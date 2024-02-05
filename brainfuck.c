@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <bfdev.h>
+#include <brainfuck.h>
 
 int
 brainfuck(const char *syntax, const char **endp)
@@ -110,9 +111,11 @@ brainfuck(const char *syntax, const char **endp)
     } while ((ch = *syntax++));
 
 finish:
+    if (endp)
+        *endp = syntax - 1;
+
     bfdev_array_release(&array);
     bfdev_array_release(&stack);
 
-    *endp = syntax - 1;
     return retval;
 }

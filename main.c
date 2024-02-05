@@ -13,9 +13,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <bfdev.h>
-
-extern int
-brainfuck(const char *syntax, const char **endp);
+#include <brainfuck.h>
 
 static inline void
 show_error(const char *curr, const char *start)
