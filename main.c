@@ -60,6 +60,8 @@ int main(int argc, const char *argv[])
     struct stat stat;
     void *block;
 
+    setbuf(stdout, NULL);
+
     for (index = 1; index < argc; ++index) {
         if ((fd = open(argv[index], O_RDONLY)) < 0)
             err(1, "%s", argv[index]);
