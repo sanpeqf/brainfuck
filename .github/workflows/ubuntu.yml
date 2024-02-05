@@ -1,0 +1,63 @@
+name: ubuntu build
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup variables
+        run: |
+          echo RELEASE=$(date +%Y\/%m\/%d) >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install make cmake gcc
+
+      - name: Prepare bfdev environment
+        run: |
+          git clone https://github.com/openbfdev/bfdev.git
+          cd bfdev
+          cmake -Bbuild -DCMAKE_INSTALL_PREFIX=${HOME}/.local -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release -j$(nproc) -- install
+
+      - name: Build project
+        run: |
+          export C_INCLUDE_PATH=$C_INCLUDE_PATH:$HOME/.local/include
+          export LIBRARY_PATH=$LIBRARY_PATH:$HOME/.local/lib:$HOME/.local/lib64
+          make
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: github.ref == 'refs/heads/master'
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          body: ${{env.RELEASE}}
+          tag_name: ${{env.RELEASE}}
+          draft: false
+          prerelease: false
+          files: |
+            ${{github.workspace}}/brainfuck
+
+      - name: Delete old releases
+        uses: dev-drprasad/delete-older-releases@v0.2.0
+        if: github.ref == 'refs/heads/master'
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          keep_latest: 1
+          delete_tags: true

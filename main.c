@@ -62,14 +62,14 @@ int main(int argc, const char *argv[])
 
     for (index = 1; index < argc; ++index) {
         if ((fd = open(argv[index], O_RDONLY)) < 0)
-            err(1, argv[index]);
+            err(1, "%s", argv[index]);
 
         if ((retval = fstat(fd, &stat)) < 0)
-            err(retval, argv[index]);
+            err(retval, "%s", argv[index]);
 
         block = mmap(NULL, stat.st_size, PROT_READ, MAP_SHARED, fd, 0);
         if (block == MAP_FAILED)
-            err(1, argv[index]);
+            err(1, "%s", argv[index]);
 
         retval = brainfuck(block, &end);
         if (bfdev_likely(!retval))
