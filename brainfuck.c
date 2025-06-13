@@ -75,8 +75,7 @@ brainfuck(const char *syntax, const char **endp)
                 break;
             }
 
-            deepth = 1;
-            while (deepth) {
+            for (deepth = 1; deepth; ++syntax) {
                 if (!*syntax) {
                     retval = -BFDEV_EINVAL;
                     goto finish;
@@ -86,8 +85,6 @@ brainfuck(const char *syntax, const char **endp)
                     deepth++;
                 else if (*syntax == ']')
                     deepth--;
-
-                syntax++;
             }
             break;
 

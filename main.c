@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <err.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
